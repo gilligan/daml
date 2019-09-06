@@ -20,3 +20,4 @@ HEAD — ongoing
   via ``daml json-api`` or by passing ``--json-api-port 7575`` to
   ``daml start``. You can find more information in the
   `README <https://github.com/digital-asset/daml/blob/master/ledger-service/http-json/README.md>`_.
++ [Ledger API] ActiveContractsService now specifies to always return at least one message with the offset. This removes a special case where clients would need to check if the stream was empty or not.

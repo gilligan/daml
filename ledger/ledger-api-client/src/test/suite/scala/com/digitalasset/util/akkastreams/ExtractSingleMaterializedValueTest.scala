@@ -23,7 +23,7 @@ class ExtractSingleMaterializedValueTest
 
   private val elemsThatPassThrough = 0.to(10).toVector
 
-  ExtractMaterializedValue.getClass.getSimpleName when {
+  ExtractLastMaterializedValue.getClass.getSimpleName when {
 
     "there's a single valid value" should {
       "extract it" in {
@@ -32,32 +32,31 @@ class ExtractSingleMaterializedValueTest
         val elements = elemToExtract +: elemsThatPassThrough
         val (extractedF, restF) = processElements(Random.shuffle(elements))
 
-        whenReady(extractedF)(_ shouldEqual elemToExtract)
+        whenReady(extractedF)(_ shouldEqual Some(elemToExtract))
         whenReady(restF)(_ should contain theSameElementsAs elements)
       }
     }
 
     "there are multiple valid values" should {
-      "extract the first" in {
+      "extract the last" in {
         val elemToExtract = -1
         val otherCandidateShuffledIn = -2
 
-        val elements = elemToExtract +: Random.shuffle(
-          otherCandidateShuffledIn +: elemsThatPassThrough)
+        val elements = Random.shuffle(otherCandidateShuffledIn +: elemsThatPassThrough) :+ elemToExtract
         val (extractedF, restF) = processElements(elements)
 
-        whenReady(extractedF)(_ shouldEqual elemToExtract)
+        whenReady(extractedF)(_ shouldEqual Some(elemToExtract))
         whenReady(restF)(_ should contain theSameElementsAs elements)
       }
     }
 
     "there are no valid values" should {
-      "fail the materialized future, but let the stream continue otherwise" in {
+      "complete the materialized future with None" in {
 
         val (extractedF, restF) =
           processElements(Random.shuffle(elemsThatPassThrough))
 
-        whenReady(extractedF.failed)(_ shouldBe a[RuntimeException])
+        whenReady(extractedF)(_ shouldEqual None)
         whenReady(restF)(_.sorted shouldEqual elemsThatPassThrough)
       }
     }
@@ -67,7 +66,7 @@ class ExtractSingleMaterializedValueTest
   private def processElements(elements: Iterable[Int]) = {
     Source
       .fromIterator(() => elements.iterator)
-      .viaMat(ExtractMaterializedValue(discriminator))(Keep.right)
+      .viaMat(ExtractLastMaterializedValue(discriminator))(Keep.right)
       .toMat(Sink.seq)(Keep.both)
       .run()
   }

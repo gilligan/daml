@@ -21,7 +21,7 @@ class ActiveContractSetClient(ledgerId: LedgerId, activeContractsService: Active
     implicit esf: ExecutionSequencerFactory) {
   def getActiveContracts(
       filter: TransactionFilter,
-      verbose: Boolean = false): Source[GetActiveContractsResponse, Future[String]] = {
+      verbose: Boolean = false): Source[GetActiveContractsResponse, Future[Option[String]]] = {
     ActiveContractSetSource(
       activeContractsService.getActiveContracts,
       GetActiveContractsRequest(ledgerId.unwrap, Some(filter), verbose))

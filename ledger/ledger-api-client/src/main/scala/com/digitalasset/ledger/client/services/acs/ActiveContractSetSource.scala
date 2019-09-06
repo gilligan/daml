@@ -10,7 +10,7 @@ import com.digitalasset.ledger.api.v1.active_contracts_service.{
   GetActiveContractsRequest,
   GetActiveContractsResponse
 }
-import com.digitalasset.util.akkastreams.ExtractMaterializedValue
+import com.digitalasset.util.akkastreams.ExtractLastMaterializedValue
 import io.grpc.stub.StreamObserver
 
 import scala.concurrent.Future
@@ -21,10 +21,11 @@ object ActiveContractSetSource {
   def apply(
       stub: (GetActiveContractsRequest, StreamObserver[GetActiveContractsResponse]) => Unit,
       request: GetActiveContractsRequest)(implicit esf: ExecutionSequencerFactory)
-    : Source[GetActiveContractsResponse, Future[String]] = {
+    : Source[GetActiveContractsResponse, Future[Option[String]]] = {
 
     ClientAdapter
       .serverStreaming(request, stub)
-      .viaMat(new ExtractMaterializedValue(r => Some(r.offset)))(Keep.right)
+      .viaMat(new ExtractLastMaterializedValue(r =>
+        if (r.offset.nonEmpty) Some(r.offset) else None))(Keep.right)
   }
 }
